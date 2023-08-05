@@ -33,26 +33,17 @@ export function initTemplate(scope, templateElement) {
   const content = templateElement.content;
   const observe = templateElement.getAttribute("observe")?.split() ?? [];
   const scriptElement = content.querySelector("script");
-  const script = new Function(
-    "shadow",
-    scriptElement.innerText + `; \n return [typeof constructor === "undefined" ? undefined : constructor, typeof observer === "undefined" ? undefined : observer];`,
-  );
+  const script = new Function("shadow", "args", scriptElement.innerText);
   scriptElement.remove();
 
   const def = class extends HTMLElement {
-    #observerFn;
     constructor(...args) {
       super();
-      const shadow = this.attachShadow({ mode: "closed" });
+      const shadow = this.attachShadow({ mode: templateElement.getAttribute("shadow") ?? "closed" });
       shadow.append(content.cloneNode(true));
-      const [constructorFn, observerFn] = script.call(this, shadow);
-      this.#observerFn = observerFn;
-      constructorFn?.(...args);
+      script.call(this, shadow, args);
     }
     static get observedAttributes() { return observe; }
-    attributeChangedCallback(name, oldValue, newValue) {
-      this.#observerFn?.(name, oldValue, newValue);
-    }
   }
 
   const name = [

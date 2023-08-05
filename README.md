@@ -19,9 +19,14 @@ A JavaScript patch for `<template>` defined custom elements.
 ```html
 <!-- widgets.html -->
 
-<template name="clock" observe="show">
+<template name="clock" observe="show" shadow="closed">
   <time></time>
   <script>
+    /*
+      Magic Variables:
+      - shadow: custom element shadow root
+      - args: custom element constructor arguments
+    */
     const time = shadow.querySelector("time");
 
     function updateTime() {
@@ -36,20 +41,18 @@ A JavaScript patch for `<template>` defined custom elements.
 
     let currentUpdate = updateTime;
 
-    function constructor() {
-      const update = () => {
-        currentUpdate();
-        window.requestAnimationFrame(update);
-      };
+    const update = () => {
+      currentUpdate();
       window.requestAnimationFrame(update);
-    }
+    };
+    window.requestAnimationFrame(update);
 
-    function observer(name, oldValue, newValue) {
+    this.attributeChangedCallback = (name, oldValue, newValue) => {
       if (name === "show") {
         if (newValue === "full") currentUpdate = updateDatetime;
         else currentUpdate = updateTime;
       }
-    }
+    };
   </script>
 </template>
 ```
